@@ -47,7 +47,7 @@ def load_model_from_config(config, ckpt, verbose=False):
     model.eval()
     return model
 
-
+# 注意:這裡只能load一張
 def load_img(path):
     # RGBA->RGB, Alpha通道->不透明度
     image = Image.open(path).convert("RGB")
@@ -61,7 +61,11 @@ def load_img(path):
     image = image.resize((w, h), resample=PIL.Image.LANCZOS)
     
     image = np.array(image).astype(np.float32) / 255.0
+
+    # 在前面多加一個維度，當作batch=1，且將顏色通道向前移。
     image = image[None].transpose(0, 3, 1, 2)
+
+    # 轉成tensor
     image = torch.from_numpy(image)
     return 2.*image - 1.
 
