@@ -24,7 +24,7 @@ def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
 
-# model = load_model_from_config(config, f"{opt.ckpt}")
+# model = load_model_from_config(config, f"{opt.ckpt}"), load 權重及創建model
 def load_model_from_config(config, ckpt, verbose=False):
     print(f"Loading model from {ckpt}")
     pl_sd = torch.load(ckpt, map_location="cpu")
