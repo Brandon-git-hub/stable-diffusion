@@ -212,9 +212,13 @@ def main():
         default="autocast"
     )
 
+    # 使用 parse_args() 來從 parser 取得引數傳來的 Data
     opt = parser.parse_args()
+
+    # seed=42, from pytorch_lightning import seed_everything
     seed_everything(opt.seed)
 
+    # 載入v1-inference.yaml
     config = OmegaConf.load(f"{opt.config}")
     model = load_model_from_config(config, f"{opt.ckpt}")
 
