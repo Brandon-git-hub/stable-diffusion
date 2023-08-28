@@ -301,6 +301,8 @@ def main():
                 if not opt.skip_grid:
                     # additionally, save as grid
                     grid = torch.stack(all_samples, 0)
+
+                    # (n b) -> n*b
                     grid = rearrange(grid, 'n b c h w -> (n b) c h w')
                     grid = make_grid(grid, nrow=n_rows)
 
