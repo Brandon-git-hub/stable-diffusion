@@ -77,6 +77,7 @@ def load_img(path):
 def main():
     parser = argparse.ArgumentParser()
 
+    # nargs="?" -> 引數只能是 0 個或是 1 個
     parser.add_argument(
         "--prompt",
         type=str,
@@ -100,6 +101,7 @@ def main():
         default="outputs/img2img-samples"
     )
 
+    # action='store_true' -> 將引數儲存為 boolean，若命令時有調用則true
     parser.add_argument(
         "--skip_grid",
         action='store_true',
