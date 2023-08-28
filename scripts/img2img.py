@@ -36,6 +36,8 @@ def load_model_from_config(config, ckpt, verbose=False):
     model = instantiate_from_config(config.model)
     # teturn missing_keys, unexpected_keys
     m, u = model.load_state_dict(sd, strict=False)
+
+    # verbose決定要不要囉唆
     if len(m) > 0 and verbose:
         print("missing keys:")
         print(m)
