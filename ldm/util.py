@@ -87,6 +87,7 @@ def instantiate_from_config(config):
 
 # config["target"] = 'ldm.models.diffusion.ddpm.LatentDiffusion'
 def get_obj_from_str(string, reload=False):
+    ##　從右側開始拆分 ['ldm.models.diffusion.ddpm', 'LatentDiffusion']
     module, cls = string.rsplit(".", 1)
     if reload:
         module_imp = importlib.import_module(module)
