@@ -215,13 +215,12 @@ def main():
     # 使用 parse_args() 來從 parser 取得引數傳來的 Data
     opt = parser.parse_args()
 
-    # seed=42, from pytorch_lightning import seed_everything
+    # 全部所有相同隨機種子設置，seed=42, from pytorch_lightning import seed_everything
     seed_everything(opt.seed)
 
-    # 載入v1-inference.yaml
+    # 載入v1-inference.yaml，以及load pre-trained model. 用GPU跑
     config = OmegaConf.load(f"{opt.config}")
     model = load_model_from_config(config, f"{opt.ckpt}")
-
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
 
