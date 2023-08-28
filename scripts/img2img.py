@@ -1,4 +1,4 @@
-"""make variations of input image"""
+"""Condition img & prompt去生成圖片 (Eval)"""
 
 import argparse, os, sys, glob
 import PIL
