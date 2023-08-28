@@ -225,6 +225,7 @@ def main():
     model = model.to(device)
 
     if opt.plms:
+        # 但是已經看到寫好了?
         raise NotImplementedError("PLMS sampler not (yet) supported")
         sampler = PLMSSampler(model)
     else:
