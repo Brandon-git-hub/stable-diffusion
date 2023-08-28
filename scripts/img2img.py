@@ -1,4 +1,5 @@
 """Condition img & prompt去生成圖片 (Eval)"""
+"""python scripts/img2img.py --prompt "A fantasy landscape, trending on artstation" --init-img <path-to-img.jpg> --strength 0.8"""
 
 import argparse, os, sys, glob
 import PIL
@@ -243,23 +244,31 @@ def main():
     # 指令載入prompt
     if not opt.from_file:
         prompt = opt.prompt
-        # if None, assertion error
+        ## if None, assertion error
         assert prompt is not None
-        # [['...', '...']]
+        ## [['...', '...']]
         data = [batch_size * [prompt]]
     
     # 從file中載入prompt (自己寫file)
     else:
         print(f"reading prompts from {opt.from_file}")
         with open(opt.from_file, "r") as f:
+            ## ['1', '2', '3', '4', '5', '6']
             data = f.read().splitlines()
+            ## 形式: [('1', '2', '3'), ('4', '5', '6')]
             data = list(chunk(data, batch_size))
 
+    # ouput圖片的儲存位置, "outputs/img2img-samples"
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
+
+    # base:  , grid:
+    # 算目錄下多少檔案+子目錄
+    # outpath = "outputs/img2img-samples", sample_path="outputs/img2img-samples/samples"
     base_count = len(os.listdir(sample_path))
     grid_count = len(os.listdir(outpath)) - 1
 
+    # 是否為檔案非路徑
     assert os.path.isfile(opt.init_img)
 
     # init_image torch.Size([1,3,512,512])
@@ -267,6 +276,8 @@ def main():
 
     # 將原先的一張img，repeat成數張(同一張)
     init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
+
+    # 詳細請見 stable-diffusion/ldm/models/diffusion/ddpm.py
     init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
     sampler.make_schedule(ddim_num_steps=opt.ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)
