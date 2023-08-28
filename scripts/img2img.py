@@ -67,6 +67,8 @@ def load_img(path):
 
     # 轉成tensor
     image = torch.from_numpy(image)
+
+    # range: 0~1 -> -1~1
     return 2.*image - 1.
 
 
