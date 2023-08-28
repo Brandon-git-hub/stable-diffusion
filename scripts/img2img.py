@@ -249,7 +249,11 @@ def main():
     grid_count = len(os.listdir(outpath)) - 1
 
     assert os.path.isfile(opt.init_img)
+
+    # init_image torch.Size([1,3,512,512])
     init_image = load_img(opt.init_img).to(device)
+
+    # 將原先的一張img，repeat成數張(同一張)
     init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
     init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
