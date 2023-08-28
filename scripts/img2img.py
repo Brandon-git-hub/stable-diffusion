@@ -231,16 +231,24 @@ def main():
     else:
         sampler = DDIMSampler(model)
 
+    # 沒有"outputs/img2img-samples"話，創建(包括中間過程的)
     os.makedirs(opt.outdir, exist_ok=True)
     outpath = opt.outdir
 
     batch_size = opt.n_samples
+
+    # default=0, "rows in the grid (default: n_samples)"
     n_rows = opt.n_rows if opt.n_rows > 0 else batch_size
+
+    # 指令載入prompt
     if not opt.from_file:
         prompt = opt.prompt
+        # if None, assertion error
         assert prompt is not None
+        # [['...', '...']]
         data = [batch_size * [prompt]]
-
+    
+    # 從file中載入prompt (自己寫file)
     else:
         print(f"reading prompts from {opt.from_file}")
         with open(opt.from_file, "r") as f:
