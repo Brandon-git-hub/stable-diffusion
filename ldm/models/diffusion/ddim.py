@@ -205,8 +205,12 @@ class DDIMSampler(object):
 
     @torch.no_grad()
     def stochastic_encode(self, x0, t, use_original_steps=False, noise=None):
+        # z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*batch_size).to(device))
+        
         # fast, but does not allow for exact reconstruction
         # t serves as an index to gather the correct alphas
+
+        # False
         if use_original_steps:
             sqrt_alphas_cumprod = self.sqrt_alphas_cumprod
             sqrt_one_minus_alphas_cumprod = self.sqrt_one_minus_alphas_cumprod
