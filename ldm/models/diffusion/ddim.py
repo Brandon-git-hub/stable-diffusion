@@ -8,11 +8,12 @@ from functools import partial
 from ldm.modules.diffusionmodules.util import make_ddim_sampling_parameters, make_ddim_timesteps, noise_like, \
     extract_into_tensor
 
-
+# model = LDM ('img2img')
 class DDIMSampler(object):
     def __init__(self, model, schedule="linear", **kwargs):
         super().__init__()
         self.model = model
+        # 1000
         self.ddpm_num_timesteps = model.num_timesteps
         self.schedule = schedule
 
@@ -227,8 +228,10 @@ class DDIMSampler(object):
     @torch.no_grad()
     def decode(self, x_latent, cond, t_start, unconditional_guidance_scale=1.0, unconditional_conditioning=None,
                use_original_steps=False):
-        
+        # self.ddpm_num_timesteps = model.num_timesteps
         timesteps = np.arange(self.ddpm_num_timesteps) if use_original_steps else self.ddim_timesteps
+
+        # t_start = t_enc = scale*50
         timesteps = timesteps[:t_start]
 
         time_range = np.flip(timesteps)
