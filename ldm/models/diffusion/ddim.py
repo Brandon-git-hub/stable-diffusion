@@ -228,7 +228,9 @@ class DDIMSampler(object):
     @torch.no_grad()
     def decode(self, x_latent, cond, t_start, unconditional_guidance_scale=1.0, unconditional_conditioning=None,
                use_original_steps=False):
-        # self.ddpm_num_timesteps = model.num_timesteps
+                   
+        # self.ddpm_num_timesteps = model.num_timesteps=1000 (original ddpm)
+        # False, use ddim_timsteps from make_schedule
         timesteps = np.arange(self.ddpm_num_timesteps) if use_original_steps else self.ddim_timesteps
 
         # t_start = t_enc = scale*50
