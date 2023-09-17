@@ -109,6 +109,7 @@ def main():
         help="do not save a grid, only individual samples. Helpful when evaluating lots of samples",
     )
 
+    # 將引數儲存為 boolean，若命令時有調用則true，否則false。 
     parser.add_argument(
         "--skip_save",
         action='store_true',
@@ -277,12 +278,14 @@ def main():
     # 將原先的一張img，repeat成數張(同一張)
     init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
 
-    # 詳細請見 stable-diffusion/ldm/models/diffusion/ddpm.py
+    # model = stable-diffusion/ldm/models/diffusion/ddpm.py, encode by vae
     init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
     sampler.make_schedule(ddim_num_steps=opt.ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)
 
     assert 0. <= opt.strength <= 1., 'can only work with strength in [0.0, 1.0]'
+
+    # t_enc:strength*50
     t_enc = int(opt.strength * opt.ddim_steps)
     print(f"target t_enc is {t_enc} steps")
 
@@ -295,7 +298,10 @@ def main():
                 for n in trange(opt.n_iter, desc="Sampling"):
                     for prompts in tqdm(data, desc="data"):
                         uc = None
+                        # 如果scale=1，沒有unconditional_conditioning (考慮c:prompts, z_enc)(但為何需要uc?)
+                        # scale越大，受prompt影響越大。
                         if opt.scale != 1.0:
+                            # uc = unconditional_conditioning
                             uc = model.get_learned_conditioning(batch_size * [""])
                         if isinstance(prompts, tuple):
                             prompts = list(prompts)
@@ -308,6 +314,8 @@ def main():
                                                  unconditional_conditioning=uc,)
 
                         x_samples = model.decode_first_stage(samples)
+
+                        # -1~1 -> 0~1
                         x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
 
                         if not opt.skip_save:
@@ -318,6 +326,7 @@ def main():
                                 base_count += 1
                         all_samples.append(x_samples)
 
+                # 多張影像，用格線合成一張
                 if not opt.skip_grid:
                     # additionally, save as grid
                     grid = torch.stack(all_samples, 0)
