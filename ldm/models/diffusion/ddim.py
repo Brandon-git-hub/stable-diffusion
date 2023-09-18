@@ -165,6 +165,12 @@ class DDIMSampler(object):
         return img, intermediates
 
     ## img2img yes
+    # use_original_steps=false
+    # unconditional_guidance_scale = opt.scale = 5.0
+    # unconditional_conditioning=uc
+    # x_dec, _ = self.p_sample_ddim(x_dec, cond, ts, index=index, use_original_steps=use_original_steps,
+    #                                       unconditional_guidance_scale=unconditional_guidance_scale,
+    #                                       unconditional_conditioning=unconditional_conditioning)
     @torch.no_grad()
     def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
@@ -175,12 +181,14 @@ class DDIMSampler(object):
             e_t = self.model.apply_model(x, t, c)
         else:
             # img2img is here
+            # unconditional_conditioning=uc, unconditional_guidance_scale=5.0
             x_in = torch.cat([x] * 2)
             t_in = torch.cat([t] * 2)
             c_in = torch.cat([unconditional_conditioning, c])
             e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
             e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
 
+        # img2img no ?
         if score_corrector is not None:
             assert self.model.parameterization == "eps"
             e_t = score_corrector.modify_score(self.model, e_t, x, t, c, **corrector_kwargs)
@@ -189,6 +197,7 @@ class DDIMSampler(object):
         alphas_prev = self.model.alphas_cumprod_prev if use_original_steps else self.ddim_alphas_prev
         sqrt_one_minus_alphas = self.model.sqrt_one_minus_alphas_cumprod if use_original_steps else self.ddim_sqrt_one_minus_alphas
         sigmas = self.model.ddim_sigmas_for_original_num_steps if use_original_steps else self.ddim_sigmas
+        
         # select parameters corresponding to the currently considered timestep
         a_t = torch.full((b, 1, 1, 1), alphas[index], device=device)
         a_prev = torch.full((b, 1, 1, 1), alphas_prev[index], device=device)
@@ -197,10 +206,14 @@ class DDIMSampler(object):
 
         # current prediction for x_0
         pred_x0 = (x - sqrt_one_minus_at * e_t) / a_t.sqrt()
+
+        # False
         if quantize_denoised:
             pred_x0, _, *_ = self.model.first_stage_model.quantize(pred_x0)
+            
         # direction pointing to x_t
         dir_xt = (1. - a_prev - sigma_t**2).sqrt() * e_t
+        
         noise = sigma_t * noise_like(x.shape, device, repeat_noise) * temperature
         if noise_dropout > 0.:
             noise = torch.nn.functional.dropout(noise, p=noise_dropout)
@@ -267,6 +280,8 @@ class DDIMSampler(object):
             # if i=0, index=2-0-1=1
             # if i=1, index=2-1-1=0
             index = total_steps - i - 1
+
+            # torch.full(batchsize, step e.g. 1, 21, 41), torch.full(size, fill_value)
             ts = torch.full((x_latent.shape[0],), step, device=x_latent.device, dtype=torch.long)
 
             # use_original_steps=false
