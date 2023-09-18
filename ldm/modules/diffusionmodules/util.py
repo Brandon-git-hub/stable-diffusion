@@ -95,7 +95,12 @@ def betas_for_alpha_bar(num_diffusion_timesteps, alpha_bar, max_beta=0.999):
 
 def extract_into_tensor(a, t, x_shape):
     b, *_ = t.shape
+
+    # 取得schedule中第t個值，第一軸是batch
     out = a.gather(-1, t)
+    # len(x_shape), 取得x有幾軸, bchw, 4
+
+    # reshape(b,1,1,1)
     return out.reshape(b, *((1,) * (len(x_shape) - 1)))
 
 
