@@ -208,18 +208,29 @@ class DDIMSampler(object):
     @torch.no_grad()
     def stochastic_encode(self, x0, t, use_original_steps=False, noise=None):        
         # fast, but does not allow for exact reconstruction
-        # t serves as an index to gather the correct alphas
-
+        # t serves as an index to gather the correct alphas, tensor([0], device='cuda:0')(img2img)
+        # x0 torch.Size([1, 4, 64, 64])
+        
+        # sqrt_alphas_cumprod, torch.Size([50]), 大到小(1~0)
+        # tensor([0.9991, 0.9901, 0.9802, 0.9694, 0.9577, 0.9450, 0.9313, 0.9167, 0.9012,
+        # 0.8847, 0.8673, 0.8489, 0.8298, 0.8097, 0.7889, 0.7673, 0.7451, 0.7222,
+        # 0.6987, 0.6747, 0.6503, 0.6255, 0.6005, 0.5752, 0.5498, 0.5244, 0.4990,
+        # 0.4738, 0.4488, 0.4241, 0.3998, 0.3759, 0.3525, 0.3298, 0.3076, 0.2862,
+        # 0.2655, 0.2457, 0.2266, 0.2085, 0.1912, 0.1748, 0.1593, 0.1447, 0.1311,
+        # 0.1183, 0.1065, 0.0955, 0.0853, 0.0760], device='cuda:0')
+        
         # False
         if use_original_steps:
             sqrt_alphas_cumprod = self.sqrt_alphas_cumprod
             sqrt_one_minus_alphas_cumprod = self.sqrt_one_minus_alphas_cumprod
         else:
-            sqrt_alphas_cumprod = torch.sqrt(self.ddim_alphas)
+            sqrt_alphas_cumprod = torch.sqrt(self.ddim_alphas) 
             sqrt_one_minus_alphas_cumprod = self.ddim_sqrt_one_minus_alphas
 
         if noise is None:
             noise = torch.randn_like(x0)
+
+        # output.shape, torch.Size([1, 4, 64, 64])
         return (extract_into_tensor(sqrt_alphas_cumprod, t, x0.shape) * x0 +
                 extract_into_tensor(sqrt_one_minus_alphas_cumprod, t, x0.shape) * noise)
 
