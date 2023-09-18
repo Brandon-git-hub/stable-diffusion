@@ -888,17 +888,25 @@ class LatentDiffusion(DDPM):
 
         return [rescale_bbox(b) for b in bboxes]
 
+    ## im2img yes
+    # x_in = torch.cat([x] * 2)
+    # t_in = torch.cat([t] * 2)
+    # c_in = torch.cat([unconditional_conditioning, c])
+    # e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
     def apply_model(self, x_noisy, t, cond, return_ids=False):
 
         if isinstance(cond, dict):
             # hybrid case, cond is exptected to be a dict
             pass
         else:
+            # img2img
             if not isinstance(cond, list):
                 cond = [cond]
+            # img2img: c_crossattn
             key = 'c_concat' if self.model.conditioning_key == 'concat' else 'c_crossattn'
             cond = {key: cond}
 
+        # img2img no
         if hasattr(self, "split_input_params"):
             assert len(cond) == 1  # todo can only deal with one conditioning atm
             assert not return_ids  
@@ -983,12 +991,14 @@ class LatentDiffusion(DDPM):
             # stitch crops together
             x_recon = fold(o) / normalization
 
+        # img2img here
         else:
             x_recon = self.model(x_noisy, t, **cond)
 
         if isinstance(x_recon, tuple) and not return_ids:
             return x_recon[0]
         else:
+            # img2img here
             return x_recon
 
     def _predict_eps_from_xstart(self, x_t, t, pred_xstart):
