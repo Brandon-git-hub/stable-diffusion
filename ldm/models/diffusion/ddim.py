@@ -111,6 +111,7 @@ class DDIMSampler(object):
                                                     )
         return samples, intermediates
 
+    # img2img no
     @torch.no_grad()
     def ddim_sampling(self, cond, shape,
                       x_T=None, ddim_use_original_steps=False,
@@ -163,6 +164,7 @@ class DDIMSampler(object):
 
         return img, intermediates
 
+    ## img2img yes
     @torch.no_grad()
     def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
@@ -172,6 +174,7 @@ class DDIMSampler(object):
         if unconditional_conditioning is None or unconditional_guidance_scale == 1.:
             e_t = self.model.apply_model(x, t, c)
         else:
+            # img2img is here
             x_in = torch.cat([x] * 2)
             t_in = torch.cat([t] * 2)
             c_in = torch.cat([unconditional_conditioning, c])
@@ -243,19 +246,32 @@ class DDIMSampler(object):
         # self.ddpm_num_timesteps = model.num_timesteps=1000 (original ddpm)
         # False, use ddim_timsteps from make_schedule
         timesteps = np.arange(self.ddpm_num_timesteps) if use_original_steps else self.ddim_timesteps
+        # ddim_timesteps =   1  21  41  61  81 101 121 141 161 181 201 221 241 261 281 301 321 341                                                                      
+        # 361 381 401 421 441 461 481 501 521 541 561 581 601 621 641 661 681 701
+        # 721 741 761 781 801 821 841 861 881 901 921 941 961 981] # 共50個
 
-        # t_start = t_enc = scale*50
+        # t_start = t_enc = strength*50
+        # if strength=0.04, t_start = 2, then timesteps = [1 21]
         timesteps = timesteps[:t_start]
 
+        # reverse process, 從後至前
         time_range = np.flip(timesteps)
+
+        # ddim 共幾步
         total_steps = timesteps.shape[0]
         print(f"Running DDIM Sampling with {total_steps} timesteps")
 
         iterator = tqdm(time_range, desc='Decoding image', total=total_steps)
         x_dec = x_latent
         for i, step in enumerate(iterator):
+            # if i=0, index=2-0-1=1
+            # if i=1, index=2-1-1=0
             index = total_steps - i - 1
             ts = torch.full((x_latent.shape[0],), step, device=x_latent.device, dtype=torch.long)
+
+            # use_original_steps=false
+            # unconditional_guidance_scale = opt.scale = 5.0
+            # unconditional_conditioning=uc
             x_dec, _ = self.p_sample_ddim(x_dec, cond, ts, index=index, use_original_steps=use_original_steps,
                                           unconditional_guidance_scale=unconditional_guidance_scale,
                                           unconditional_conditioning=unconditional_conditioning)
