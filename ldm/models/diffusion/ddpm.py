@@ -993,6 +993,7 @@ class LatentDiffusion(DDPM):
 
         # img2img here
         else:
+            # self.model = DiffusionWrapper(unet_config, conditioning_key)
             x_recon = self.model(x_noisy, t, **cond)
 
         if isinstance(x_recon, tuple) and not return_ids:
