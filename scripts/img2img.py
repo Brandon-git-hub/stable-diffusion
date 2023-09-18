@@ -287,7 +287,7 @@ def main():
 
     # t_enc:strength*50
     t_enc = int(opt.strength * opt.ddim_steps)
-    print(f"target t_enc is {t_enc} steps")
+    print(f"target t_enc is {t_enc} steps") # target t_enc is 0 steps (if strength=0.01, then t_enc=0.5), (int(0.5)=0)
 
     precision_scope = autocast if opt.precision == "autocast" else nullcontext
     with torch.no_grad():
