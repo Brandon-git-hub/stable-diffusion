@@ -182,7 +182,7 @@ class DDIMSampler(object):
         else:
             # img2img is here
             # unconditional_conditioning=uc, unconditional_guidance_scale=5.0
-            x_in = torch.cat([x] * 2)
+            x_in = torch.cat([x] * 2) # x_in.shape torch.Size([2, 4, 64, 64])
             t_in = torch.cat([t] * 2)
             c_in = torch.cat([unconditional_conditioning, c])
             e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
