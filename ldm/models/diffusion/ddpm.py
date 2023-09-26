@@ -37,7 +37,7 @@ def disabled_train(self, mode=True):
     does not change anymore."""
     return self
 
-
+# 產生介於r1,r2之間的隨機數，並在指定device上 (沒用到?)
 def uniform_on_device(r1, r2, shape, device):
     return (r1 - r2) * torch.rand(*shape, device=device) + r2
 
@@ -78,14 +78,22 @@ class DDPM(pl.LightningModule):
         self.parameterization = parameterization
         print(f"{self.__class__.__name__}: Running in {self.parameterization}-prediction mode")
         self.cond_stage_model = None
+        # True, ?
         self.clip_denoised = clip_denoised
+        # 100, ?
         self.log_every_t = log_every_t
+        # 'image'
         self.first_stage_key = first_stage_key
+        # 256
         self.image_size = image_size  # try conv?
+        # 3
         self.channels = channels
+        # False
         self.use_positional_encodings = use_positional_encodings
+        # 建立UNet，計算參數量
         self.model = DiffusionWrapper(unet_config, conditioning_key)
         count_params(self.model, verbose=True)
+        # True
         self.use_ema = use_ema
         if self.use_ema:
             self.model_ema = LitEma(self.model)
