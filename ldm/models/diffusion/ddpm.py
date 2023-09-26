@@ -515,7 +515,7 @@ class LatentDiffusion(DDPM):
                           given_betas=None, beta_schedule="linear", timesteps=1000,
                           linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
         super().register_schedule(given_betas, beta_schedule, timesteps, linear_start, linear_end, cosine_s)
-
+        # 沒有>1，所以False (img2img)
         self.shorten_cond_schedule = self.num_timesteps_cond > 1
         if self.shorten_cond_schedule:
             self.make_cond_schedule()
@@ -889,9 +889,12 @@ class LatentDiffusion(DDPM):
         return loss
 
     def forward(self, x, c, *args, **kwargs):
+        # batch大小tensor，每個值為0~num_timesteps-1, self.long() is equivalent to self.to(torch.int64)
         t = torch.randint(0, self.num_timesteps, (x.shape[0],), device=self.device).long()
+        # 'crossattn'
         if self.model.conditioning_key is not None:
             assert c is not None
+            # cond_stage_trainable: false   # Note: different from the one we trained before (from v1-inference.yaml)
             if self.cond_stage_trainable:
                 c = self.get_learned_conditioning(c)
             if self.shorten_cond_schedule:  # TODO: drop this option
@@ -1041,6 +1044,7 @@ class LatentDiffusion(DDPM):
         kl_prior = normal_kl(mean1=qt_mean, logvar1=qt_log_variance, mean2=0.0, logvar2=0.0)
         return mean_flat(kl_prior) / np.log(2.0)
 
+    # return self.p_losses(x, c, t, *args, **kwargs)
     def p_losses(self, x_start, cond, t, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))
         x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
