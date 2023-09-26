@@ -444,7 +444,9 @@ class LatentDiffusion(DDPM):
                  scale_factor=1.0,
                  scale_by_std=False,
                  *args, **kwargs):
+        # 1, ?
         self.num_timesteps_cond = default(num_timesteps_cond, 1)
+        # False
         self.scale_by_std = scale_by_std
         assert self.num_timesteps_cond <= kwargs['timesteps']
         # for backwards compatibility after implementation of DiffusionWrapper
@@ -452,17 +454,25 @@ class LatentDiffusion(DDPM):
             conditioning_key = 'concat' if concat_mode else 'crossattn'
         if cond_stage_config == '__is_unconditional__':
             conditioning_key = None
+        # dict.pop 返回對應key的值，並且刪除。 如果無此key，返回default。
         ckpt_path = kwargs.pop("ckpt_path", None)
         ignore_keys = kwargs.pop("ignore_keys", [])
+        # 繼承父類DDPM，其中的attr: conditioning_key會被覆蓋成這裡的。 後面一樣?
         super().__init__(conditioning_key=conditioning_key, *args, **kwargs)
+        # True
         self.concat_mode = concat_mode
+        # False
         self.cond_stage_trainable = cond_stage_trainable
+        # "txt"
         self.cond_stage_key = cond_stage_key
         try:
+            # ch_mult: -1, -2, -4, -4, len = 4
             self.num_downs = len(first_stage_config.params.ddconfig.ch_mult) - 1
         except:
             self.num_downs = 0
+        # False
         if not scale_by_std:
+            # 0.18215
             self.scale_factor = scale_factor
         else:
             self.register_buffer('scale_factor', torch.tensor(scale_factor))
