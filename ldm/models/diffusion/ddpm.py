@@ -105,6 +105,7 @@ class DDPM(pl.LightningModule):
 
         self.v_posterior = v_posterior
         self.original_elbo_weight = original_elbo_weight
+        # 1.
         self.l_simple_weight = l_simple_weight
 
         if monitor is not None:
@@ -114,7 +115,7 @@ class DDPM(pl.LightningModule):
 
         self.register_schedule(given_betas=given_betas, beta_schedule=beta_schedule, timesteps=timesteps,
                                linear_start=linear_start, linear_end=linear_end, cosine_s=cosine_s)
-
+        # "l2"
         self.loss_type = loss_type
 
         self.learn_logvar = learn_logvar
@@ -286,6 +287,7 @@ class DDPM(pl.LightningModule):
         return (extract_into_tensor(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start +
                 extract_into_tensor(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * noise)
 
+    # loss_simple = self.get_loss(model_output, target, mean=False).mean([1, 2, 3])
     def get_loss(self, pred, target, mean=True):
         if self.loss_type == 'l1':
             loss = (target - pred).abs()
@@ -313,12 +315,13 @@ class DDPM(pl.LightningModule):
             target = x_start
         else:
             raise NotImplementedError(f"Paramterization {self.parameterization} not yet supported")
-
+        # l2 loss
         loss = self.get_loss(model_out, target, mean=False).mean(dim=[1, 2, 3])
 
         log_prefix = 'train' if self.training else 'val'
 
         loss_dict.update({f'{log_prefix}/loss_simple': loss.mean()})
+        # weight = 1.
         loss_simple = loss.mean() * self.l_simple_weight
 
         loss_vlb = (self.lvlb_weights[t] * loss).mean()
@@ -1049,10 +1052,9 @@ class LatentDiffusion(DDPM):
     def p_losses(self, x_start, cond, t, noise=None):
         # ε
         noise = default(noise, lambda: torch.randn_like(x_start))
-        
         # xt
         x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
-
+        # UNet output
         model_output = self.apply_model(x_noisy, t, cond)
 
         loss_dict = {}
@@ -1074,7 +1076,8 @@ class LatentDiffusion(DDPM):
         if self.learn_logvar:
             loss_dict.update({f'{prefix}/loss_gamma': loss.mean()})
             loss_dict.update({'logvar': self.logvar.data.mean()})
-
+        
+        # l_simple_weight=1.
         loss = self.l_simple_weight * loss.mean()
 
         loss_vlb = self.get_loss(model_output, target, mean=False).mean(dim=(1, 2, 3))
