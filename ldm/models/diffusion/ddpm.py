@@ -104,6 +104,7 @@ class DDPM(pl.LightningModule):
             self.scheduler_config = scheduler_config
 
         self.v_posterior = v_posterior
+        # 0.
         self.original_elbo_weight = original_elbo_weight
         # 1.
         self.l_simple_weight = l_simple_weight
@@ -117,7 +118,7 @@ class DDPM(pl.LightningModule):
                                linear_start=linear_start, linear_end=linear_end, cosine_s=cosine_s)
         # "l2"
         self.loss_type = loss_type
-
+        # False
         self.learn_logvar = learn_logvar
         self.logvar = torch.full(fill_value=logvar_init, size=(self.num_timesteps,))
         if self.learn_logvar:
@@ -1066,13 +1067,14 @@ class LatentDiffusion(DDPM):
             target = noise
         else:
             raise NotImplementedError()
-
+        # l2 loss
         loss_simple = self.get_loss(model_output, target, mean=False).mean([1, 2, 3])
         loss_dict.update({f'{prefix}/loss_simple': loss_simple.mean()})
 
         logvar_t = self.logvar[t].to(self.device)
         loss = loss_simple / torch.exp(logvar_t) + logvar_t
         # loss = loss_simple / torch.exp(self.logvar) + self.logvar
+        # False
         if self.learn_logvar:
             loss_dict.update({f'{prefix}/loss_gamma': loss.mean()})
             loss_dict.update({'logvar': self.logvar.data.mean()})
@@ -1083,6 +1085,7 @@ class LatentDiffusion(DDPM):
         loss_vlb = self.get_loss(model_output, target, mean=False).mean(dim=(1, 2, 3))
         loss_vlb = (self.lvlb_weights[t] * loss_vlb).mean()
         loss_dict.update({f'{prefix}/loss_vlb': loss_vlb})
+        # self.original_elbo_weight = 0.
         loss += (self.original_elbo_weight * loss_vlb)
         loss_dict.update({f'{prefix}/loss': loss})
 
