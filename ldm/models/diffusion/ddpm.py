@@ -1047,8 +1047,12 @@ class LatentDiffusion(DDPM):
 
     # return self.p_losses(x, c, t, *args, **kwargs)
     def p_losses(self, x_start, cond, t, noise=None):
+        # ε
         noise = default(noise, lambda: torch.randn_like(x_start))
+        
+        # xt
         x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
+
         model_output = self.apply_model(x_noisy, t, cond)
 
         loss_dict = {}
