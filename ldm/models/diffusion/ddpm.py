@@ -147,7 +147,7 @@ class DDPM(pl.LightningModule):
         # 累乘，並且尺寸保留。
         alphas_cumprod = np.cumprod(alphas, axis=0)
         # (1000, ), <class 'numpy.ndarray'>
-        # 插入1在最前面，且把最後一個最小數擠掉了
+        # 插入1在最前面，且把最後一個最小數擠掉了。 這是alphas_cumprod_t-1
         alphas_cumprod_prev = np.append(1., alphas_cumprod[:-1])
 
         # 注意: , 是必要的。 (if not, timesteps = torch.Size([1000])) (有的話會unpack，=1000)
@@ -174,27 +174,41 @@ class DDPM(pl.LightningModule):
         self.register_buffer('sqrt_recipm1_alphas_cumprod', to_torch(np.sqrt(1. / alphas_cumprod - 1)))
 
         # calculations for posterior q(x_{t-1} | x_t, x_0) (6) (7)
+        # 下面設定了betas_tilde (7)的後面 (v_posterior=0)
         posterior_variance = (1 - self.v_posterior) * betas * (1. - alphas_cumprod_prev) / (
                     1. - alphas_cumprod) + self.v_posterior * betas
         # above: equal to 1. / (1. / (1. - alpha_cumprod_tm1) + alpha_t / beta_t)
         self.register_buffer('posterior_variance', to_torch(posterior_variance))
+        
         # below: log calculation clipped because the posterior variance is 0 at the beginning of the diffusion chain
+        # ?, 感覺是p_theta(x_0 | x_1)那邊的問題 (13)
         self.register_buffer('posterior_log_variance_clipped', to_torch(np.log(np.maximum(posterior_variance, 1e-20))))
+        
+        # betas * sqrt(alphas_cumprod_t-1 / (1- alphas_cumprod)), (7) x_0的係數
         self.register_buffer('posterior_mean_coef1', to_torch(
             betas * np.sqrt(alphas_cumprod_prev) / (1. - alphas_cumprod)))
+        # (7) x_t的係數
         self.register_buffer('posterior_mean_coef2', to_torch(
             (1. - alphas_cumprod_prev) * np.sqrt(alphas) / (1. - alphas_cumprod)))
 
+        # (12) 中的weight
         if self.parameterization == "eps":
             lvlb_weights = self.betas ** 2 / (
                         2 * self.posterior_variance * to_torch(alphas) * (1 - self.alphas_cumprod))
+        # 怪怪的，對不上，ddpm的(10)、導讀的(99)都不行
         elif self.parameterization == "x0":
             lvlb_weights = 0.5 * np.sqrt(torch.Tensor(alphas_cumprod)) / (2. * 1 - torch.Tensor(alphas_cumprod))
         else:
             raise NotImplementedError("mu not supported")
         # TODO how to choose this term
+        # 一樣0->1的過程到底是如何呢?
         lvlb_weights[0] = lvlb_weights[1]
         self.register_buffer('lvlb_weights', lvlb_weights, persistent=False)
+        
+        # torch.isnan判斷tensor元素是否是NaN or not, 回傳boolean tensor。
+        # torch.all()只要有其一為False，回傳false tensor。
+        # assert not : 希望要是False。 好像怪怪的，不應該是只要一有Nan就終止嗎?
+        # 下面這句等於: 只要有一個不為Nan就可繼續執行。
         assert not torch.isnan(self.lvlb_weights).all()
 
     @contextmanager
