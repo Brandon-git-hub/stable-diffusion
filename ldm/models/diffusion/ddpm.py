@@ -138,10 +138,15 @@ class DDPM(pl.LightningModule):
         if exists(given_betas):
             betas = given_betas
         else:
+            # 其實非線性，小至大，趨勢是越加越快 (0.0001~0.02)
             betas = make_beta_schedule(beta_schedule, timesteps, linear_start=linear_start, linear_end=linear_end,
                                        cosine_s=cosine_s)
+        # 大至小，越減越快 (0.9999~0.98)
         alphas = 1. - betas
+        # 累乘，並且尺寸保留。
         alphas_cumprod = np.cumprod(alphas, axis=0)
+        # (1000, ), <class 'numpy.ndarray'>
+        # 插入1在最前面，且把最後一個最小數擠掉了
         alphas_cumprod_prev = np.append(1., alphas_cumprod[:-1])
 
         timesteps, = betas.shape
