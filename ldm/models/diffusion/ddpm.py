@@ -102,7 +102,8 @@ class DDPM(pl.LightningModule):
         self.use_scheduler = scheduler_config is not None
         if self.use_scheduler:
             self.scheduler_config = scheduler_config
-
+        
+        # 0, 所以是用beta_tilde，這設定了p_theta的sigma，對應論文3.2的first。
         self.v_posterior = v_posterior
         # 0.
         self.original_elbo_weight = original_elbo_weight
@@ -164,7 +165,8 @@ class DDPM(pl.LightningModule):
         self.register_buffer('alphas_cumprod', to_torch(alphas_cumprod))
         self.register_buffer('alphas_cumprod_prev', to_torch(alphas_cumprod_prev))
 
-        # calculations for diffusion q(x_t | x_{t-1}) (2) and q(x_t | x_0) (4)
+        # calculations for diffusion q(x_t | x_{t-1}) (2) mu: sqrt(1-beta) var: beta
+        # and q(x_t | x_0) (4) mu: sqrt(alphas_cumprod), var: 1-alphas_cumprod
         self.register_buffer('sqrt_alphas_cumprod', to_torch(np.sqrt(alphas_cumprod)))
         self.register_buffer('sqrt_one_minus_alphas_cumprod', to_torch(np.sqrt(1. - alphas_cumprod)))
         self.register_buffer('log_one_minus_alphas_cumprod', to_torch(np.log(1. - alphas_cumprod)))
