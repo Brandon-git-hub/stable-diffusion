@@ -127,6 +127,12 @@ class DDPM(pl.LightningModule):
   
     # self.register_schedule(given_betas=given_betas, beta_schedule=beta_schedule, timesteps=timesteps,
     #                          linear_start=linear_start, linear_end=linear_end, cosine_s=cosine_s)
+    # given_betas = None
+    # beta_schedule = "linear"
+    # timesteps = 1000
+    # linear_start = 1e-4
+    # linear_end = 2e-2
+    # cosine_s = 8e-3
     def register_schedule(self, given_betas=None, beta_schedule="linear", timesteps=1000,
                           linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
         if exists(given_betas):
