@@ -149,6 +149,7 @@ class DDPM(pl.LightningModule):
         # 插入1在最前面，且把最後一個最小數擠掉了
         alphas_cumprod_prev = np.append(1., alphas_cumprod[:-1])
 
+        # 注意: , 是必要的。 (if not, timesteps = torch.Size([1000])) (有的話會unpack，=1000)
         timesteps, = betas.shape
         self.num_timesteps = int(timesteps)
         self.linear_start = linear_start
