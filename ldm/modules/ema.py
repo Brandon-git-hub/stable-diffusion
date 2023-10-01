@@ -27,6 +27,8 @@ class LitEma(nn.Module):
 
         if self.num_updates >= 0:
             self.num_updates += 1
+            # 當num_updates=8990, 後半=0.999，在此之前都是<0.999的。
+            # 原因: 在前較早時，steps較少，decay不要太低。
             decay = min(self.decay,(1 + self.num_updates) / (10 + self.num_updates))
 
         one_minus_decay = 1.0 - decay
